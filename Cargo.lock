@@ -3252,6 +3252,7 @@ dependencies = [
  "http",
  "http-body",
  "httparse",
+ "httpdate",
  "itoa",
  "pin-project-lite",
  "smallvec",
@@ -4552,6 +4553,7 @@ dependencies = [
  "lofty",
  "log",
  "md-5 0.11.0",
+ "net",
  "oauth2",
  "objc2-core-audio",
  "objc2-core-foundation",
@@ -4644,6 +4646,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873"
 dependencies = [
  "jni-sys 0.3.1",
+]
+
+[[package]]
+name = "net"
+version = "0.48.1"
+dependencies = [
+ "anyhow",
+ "base64 0.23.1",
+ "bytes",
+ "futures",
+ "http",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "moka",
+ "percent-encoding",
+ "reqwest 0.13.5",
+ "rustls 0.23.46",
+ "rustls-platform-verifier",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-rustls 0.26.6",
+ "tokio-socks",
 ]
 
 [[package]]
@@ -7523,6 +7549,7 @@ dependencies = [
  "libc",
  "log",
  "music",
+ "net",
  "objc2 0.6.5",
  "objc2-app-kit 0.3.2",
  "objc2-foundation 0.3.2",
@@ -7651,6 +7678,7 @@ dependencies = [
  "moka",
  "mpris-server",
  "music",
+ "net",
  "notify",
  "objc2-core-foundation",
  "objc2-io-kit",
@@ -8340,6 +8368,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-socks"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7e2948f60dbe26b35f2c7fb74ac2854c1fddded0fe9d7548fcc674a246f7615"
+dependencies = [
+ "either",
+ "futures-util",
+ "thiserror 1.0.69",
+ "tokio",
+]
+
+[[package]]
 name = "tokio-stream"
 version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9014,6 +9054,7 @@ dependencies = [
  "jiff",
  "log",
  "music",
+ "net",
  "open",
  "router",
  "state",
@@ -9603,6 +9644,7 @@ dependencies = [
  "flate2",
  "libc",
  "log",
+ "net",
  "objc2-app-kit 0.3.2",
  "objc2-foundation 0.3.2",
  "reqwest 0.13.5",

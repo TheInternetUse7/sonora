@@ -252,7 +252,7 @@ impl AppleClient {
     /// Reads the web player's bearer token and the account's storefront, which is also what
     /// proves the user token is still good.
     pub async fn connect(user_token: &str) -> Result<Self> {
-        let http = reqwest::Client::builder()
+        let http = net::http("apple")
             .user_agent(AGENT)
             .build()
             .context("cannot build the apple http client")?;

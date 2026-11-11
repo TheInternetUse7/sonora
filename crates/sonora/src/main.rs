@@ -79,6 +79,13 @@ fn main() -> ExitCode {
         }
         Err(refusal) => return refusal.exit(),
     };
+    // SAFETY: normal startup has not started the instance listener, Tokio, logging or GUI
+    // threads yet. The original proxy environment is captured before dependency clients inherit
+    // YouTube's reserved adapter; net::init starts serving it once settings and Tokio are ready.
+    if let Err(error) = unsafe { net::inherit("youtube") } {
+        eprintln!("network: cannot prepare routing: {error:#}");
+        return ExitCode::FAILURE;
+    }
     logging::init();
 
     let (sender, mut links) = tokio::sync::mpsc::unbounded_channel::<Vec<String>>();
@@ -103,6 +110,13 @@ fn main() -> ExitCode {
         }
     };
 
+    let database = storage::Database::standard();
+    let settings = state::AppSettings::load(database.clone());
+    if let Err(error) = net::init(settings.network().clone(), io.handle()) {
+        log::error!("network: cannot initialize routing: {error:#}");
+        return ExitCode::FAILURE;
+    }
+
     let app = gpui_platform::application()
         .with_assets(assets::Assets)
         .with_http_client(Arc::new(http::Client::new(io.handle())));
@@ -119,7 +133,6 @@ fn main() -> ExitCode {
             log::error!("sonora: cannot load bundled fonts: {error:#}");
         }
 
-        let database = storage::Database::standard();
         let providers: Vec<Arc<dyn music::MusicProvider>> = vec![
             Arc::new(music::spotify::SpotifyProvider::from_env()),
             Arc::new(music::apple::AppleProvider::new()),
@@ -147,7 +160,15 @@ fn main() -> ExitCode {
             Arc::new(music::kugou::Kugou::new()),
             Arc::new(music::netease::NetEase::new()),
         ];
-        state::init(cx, io, database, providers, local_provider, lyrics);
+        state::init(
+            cx,
+            io,
+            database,
+            settings,
+            providers,
+            local_provider,
+            lyrics,
+        );
         #[cfg(target_os = "windows")]
         state::install_rounded_window_hook(set_corner_preference, cx);
         #[cfg(target_os = "macos")]

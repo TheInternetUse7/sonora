@@ -9,12 +9,13 @@ use std::rc::{Rc, Weak};
 use anyhow::{Context as _, Result};
 use webview2_com::Microsoft::Web::WebView2::Win32::{
     CreateCoreWebView2EnvironmentWithOptions, ICoreWebView2, ICoreWebView2_2,
-    ICoreWebView2Controller, ICoreWebView2Environment10,
+    ICoreWebView2Controller, ICoreWebView2Environment10, ICoreWebView2EnvironmentOptions,
 };
 use webview2_com::{
     AddScriptToExecuteOnDocumentCreatedCompletedHandler, CoTaskMemPWSTR,
-    CreateCoreWebView2ControllerCompletedHandler, CreateCoreWebView2EnvironmentCompletedHandler,
-    ExecuteScriptCompletedHandler, GetCookiesCompletedHandler,
+    CoreWebView2EnvironmentOptions, CreateCoreWebView2ControllerCompletedHandler,
+    CreateCoreWebView2EnvironmentCompletedHandler, ExecuteScriptCompletedHandler,
+    GetCookiesCompletedHandler,
 };
 use windows::Win32::Foundation::{E_POINTER, HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
@@ -55,12 +56,7 @@ impl Window {
     pub(crate) fn open(target: &Target) -> Result<Self> {
         let hwnd = create_window(&target.title)?;
         let browser = Rc::new(RefCell::new(None));
-        let begun = begin_environment(
-            hwnd,
-            &target.url,
-            target.script.clone(),
-            Rc::downgrade(&browser),
-        );
+        let begun = begin_environment(hwnd, target, Rc::downgrade(&browser));
         if let Err(error) = begun {
             let _ = unsafe { DestroyWindow(hwnd) };
             return Err(error);
@@ -195,11 +191,11 @@ impl Drop for Window {
 /// Starts WebView2 without pumping a nested message loop inside GPUI's click handler.
 fn begin_environment(
     hwnd: HWND,
-    url: &str,
-    script: Option<String>,
+    target: &Target,
     browser: Weak<RefCell<Option<Browser>>>,
 ) -> Result<()> {
-    let url = url.to_string();
+    let url = target.url.clone();
+    let script = target.script.clone();
     let handler = CreateCoreWebView2EnvironmentCompletedHandler::create(Box::new(
         move |result, environment| {
             let result = result
@@ -212,12 +208,20 @@ fn begin_environment(
             Ok(())
         },
     ));
-    let folder = user_data_folder()?;
+    let folder = user_data_folder(&target.provider)?;
+    let options = CoreWebView2EnvironmentOptions::default();
+    unsafe {
+        options.set_additional_browser_arguments(format!(
+            "--proxy-server=http://127.0.0.1:{} --proxy-bypass-list=<-loopback> --disable-quic",
+            target.proxy_port
+        ));
+    }
+    let options: ICoreWebView2EnvironmentOptions = options.into();
     unsafe {
         CreateCoreWebView2EnvironmentWithOptions(
             PCWSTR::null(),
             PCWSTR(folder.as_ptr()),
-            None,
+            &options,
             &handler,
         )
     }
@@ -226,11 +230,12 @@ fn begin_environment(
 
 /// Sonora's own cache folder for WebView2's browser state, as a wide string. WebView2 otherwise
 /// writes beside the executable, which an installed copy under Program Files cannot do.
-fn user_data_folder() -> Result<Vec<u16>> {
+fn user_data_folder(provider: &str) -> Result<Vec<u16>> {
     let folder = dirs::cache_dir()
         .unwrap_or_else(std::env::temp_dir)
         .join("sonora")
-        .join("webview2");
+        .join("webview2")
+        .join(provider);
     std::fs::create_dir_all(&folder)
         .with_context(|| format!("cannot create {}", folder.display()))?;
     Ok(wide(&folder.to_string_lossy()))

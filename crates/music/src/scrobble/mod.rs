@@ -151,5 +151,5 @@ pub trait Service: Send + Sync {
 /// between them rather than each holding its own.
 fn http() -> &'static reqwest::Client {
     static HTTP: OnceLock<reqwest::Client> = OnceLock::new();
-    HTTP.get_or_init(reqwest::Client::new)
+    HTTP.get_or_init(|| net::client(""))
 }

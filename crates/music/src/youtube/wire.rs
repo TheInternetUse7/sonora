@@ -175,7 +175,7 @@ pub fn profile(source: ytmusic::Profile) -> UserProfile {
         avatar: source
             .thumbnails
             .last()
-            .map(|thumbnail| thumbnail.url.clone()),
+            .map(|thumbnail| net::own_artwork("youtube", thumbnail.url.clone())),
         id: source.email.unwrap_or_else(|| source.name.clone()),
         display_name: source.name,
     }
@@ -191,7 +191,9 @@ fn release_type(kind: ytmusic::AlbumKind) -> ReleaseType {
 }
 
 pub fn cover(thumbnails: &[ytmusic::Thumbnail]) -> Option<String> {
-    thumbnails.last().map(|thumb| thumb.url.clone())
+    thumbnails
+        .last()
+        .map(|thumb| net::own_artwork("youtube", thumb.url.clone()))
 }
 
 /// The largest thumbnail, asked of Google's image server at `COVER_LARGE` on its longer edge
@@ -200,7 +202,7 @@ pub fn cover(thumbnails: &[ytmusic::Thumbnail]) -> Option<String> {
 pub fn cover_large(thumbnails: &[ytmusic::Thumbnail]) -> Option<String> {
     thumbnails
         .last()
-        .map(|thumb| resized(&thumb.url, COVER_LARGE))
+        .map(|thumb| net::own_artwork("youtube", resized(&thumb.url, COVER_LARGE)))
 }
 
 /// Rewrites the `=w<width>-h<height>` options of a googleusercontent url so its longer edge is

@@ -24,7 +24,7 @@ pub fn image_url(file_id: &[u8]) -> Option<String> {
         let _ = write!(hex, "{byte:02x}");
         hex
     });
-    Some(format!("{IMAGE_CDN}{hex}"))
+    Some(net::own_artwork("spotify", format!("{IMAGE_CDN}{hex}")))
 }
 
 /// An album cover from `image_url` at another size. Album cover ids are `ab67616d0000`, a
@@ -84,7 +84,7 @@ fn playlist_cover(attributes: &ListAttributes) -> Option<String> {
             .find(|size| size.target_name() == target)
             .filter(|size| fetchable(size.url()))
         {
-            return Some(size.url().to_owned());
+            return Some(net::own_artwork("spotify", size.url().to_owned()));
         }
     }
 
@@ -95,6 +95,7 @@ fn playlist_cover(attributes: &ListAttributes) -> Option<String> {
         .filter(|url| fetchable(url))
         .map(str::to_owned)
         .or_else(|| image_url(attributes.picture()))
+        .map(|url| net::own_artwork("spotify", url))
 }
 
 pub fn playlist_from(id: &str, content: &RootList, username: &str) -> models::Playlist {

@@ -226,7 +226,7 @@ impl DeezerClient {
     }
 
     fn unopened(arl: &str) -> Result<Self> {
-        let http = reqwest::Client::builder()
+        let http = net::http("deezer")
             .user_agent("Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0")
             .build()
             .context("cannot build the deezer http client")?;

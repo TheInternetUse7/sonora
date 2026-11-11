@@ -1,7 +1,6 @@
 //! Links to a provider's pages read back into what they point at, and the one fetch a short
 //! link needs before it can be read.
 
-use std::sync::OnceLock;
 use std::time::Duration;
 
 use reqwest::Url;
@@ -68,18 +67,13 @@ pub fn query(url: &Url, key: &str) -> Option<String> {
 
 /// Fetches an https short link, following its redirects, and reads the start of the page it
 /// ends at. Nothing but https is ever fetched, so a redirect to any other scheme fails the follow.
-pub async fn follow(link: &str) -> Option<Followed> {
+pub async fn follow(provider: &str, link: &str) -> Option<Followed> {
     let url = follow_address(address(link).filter(|url| url.scheme() == "https")?)?;
-    static CLIENT: OnceLock<Option<reqwest::Client>> = OnceLock::new();
-    let client = CLIENT
-        .get_or_init(|| {
-            reqwest::Client::builder()
-                .timeout(TIMEOUT)
-                .redirect(reqwest::redirect::Policy::custom(https_only))
-                .build()
-                .ok()
-        })
-        .as_ref()?;
+    let client = net::http(provider)
+        .timeout(TIMEOUT)
+        .redirect(reqwest::redirect::Policy::custom(https_only))
+        .build()
+        .ok()?;
     let mut response = client
         .get(url)
         .send()

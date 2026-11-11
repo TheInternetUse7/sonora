@@ -27,6 +27,9 @@ pub struct SubsonicProvider;
 
 impl SubsonicProvider {
     pub fn new() -> Self {
+        if let Some(credentials) = auth::load() {
+            net::register_artwork_origin("subsonic", &credentials.server);
+        }
         Self
     }
 

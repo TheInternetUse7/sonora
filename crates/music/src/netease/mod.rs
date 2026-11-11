@@ -25,7 +25,7 @@ pub struct NetEase {
 impl NetEase {
     pub fn new() -> Self {
         Self {
-            http: reqwest::Client::new(),
+            http: net::client(""),
         }
     }
 

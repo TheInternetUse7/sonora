@@ -189,7 +189,9 @@ fn authorize(client_id: &str, redirect_uri: &str, prompt: PromptSink) -> Result<
 /// Carries one oauth2 request over reqwest. oauth2 only knows the reqwest it was built against,
 /// so the workspace one is handed in as a plain function instead.
 fn exchange(request: oauth2::HttpRequest) -> Result<oauth2::HttpResponse, reqwest::Error> {
-    let sent = reqwest::blocking::Client::new().execute(request.try_into()?)?;
+    let sent = net::blocking("spotify")
+        .build()?
+        .execute(request.try_into()?)?;
     let status = sent.status();
     let headers = sent.headers().clone();
     let mut response = http::Response::new(sent.bytes()?.to_vec());
@@ -257,6 +259,7 @@ pub(crate) fn session(config: &AuthConfig) -> Result<Session> {
     .with_context(|| format!("cannot open cache at {}", config.cache_dir.display()))?;
 
     let session_config = SessionConfig {
+        proxy: net::gateway("spotify")?,
         client_id: config.client_id.clone(),
         device_id: device_id(&config.cache_dir),
         ..Default::default()

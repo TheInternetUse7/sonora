@@ -102,7 +102,7 @@ impl Links {
 
     /// Fetches a short link and opens what its address or its page leads to on `slug`.
     fn follow(&mut self, slug: &'static str, short: String, cx: &mut Context<Self>) {
-        let fetch = Io::global(cx).spawn(async move { link::follow(&short).await });
+        let fetch = Io::global(cx).spawn(async move { link::follow(slug, &short).await });
         self.following = Some(cx.spawn(async move |this, cx| {
             let followed = fetch.await.ok().flatten();
             this.update(cx, |this, cx| {

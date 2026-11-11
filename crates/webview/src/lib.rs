@@ -56,6 +56,9 @@ use unsupported as platform;
 /// skipped hand-off is left out.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Target {
+    pub provider: String,
+    /// Port of the provider-scoped loopback HTTP adapter.
+    pub proxy_port: u16,
     pub url: String,
     pub landing: String,
     pub domain: String,

@@ -347,10 +347,13 @@ impl Session {
         Some(provider.slug())
     }
 
-    /// The host to try when checking whether the network is back. It is the active provider's
-    /// own, so the check never touches a service the app is not already using.
-    pub fn reach(&self) -> Option<String> {
-        self.providers.get(self.active?)?.reach()
+    /// The active provider's scope and endpoint for a reconnect probe.
+    pub fn reach(&self) -> Option<(&'static str, reqwest::Url)> {
+        let provider = self.providers.get(self.active?)?;
+        let endpoint = provider
+            .location()
+            .or_else(|| provider.reach().map(|host| format!("https://{host}/")))?;
+        Some((provider.slug(), reqwest::Url::parse(&endpoint).ok()?))
     }
 
     /// What `link` points at, with the slug of the provider whose link it is. Every provider is
@@ -677,7 +680,18 @@ impl Session {
         let Some(sign_in) = provider.web_sign_in() else {
             return;
         };
+        let proxy = match net::gateway(provider.slug()) {
+            Ok(proxy) => proxy.expect("application networking is initialized"),
+            Err(error) => {
+                log::error!("webview: cannot configure the provider proxy: {error:#}");
+                self.task = None;
+                self.input = None;
+                return self.failed(&error, cx);
+            }
+        };
         let target = webview::Target {
+            provider: provider.slug().to_owned(),
+            proxy_port: proxy.port().expect("proxy adapter has a port"),
             url: sign_in.url.to_string(),
             landing: sign_in.landing.to_string(),
             domain: sign_in.domain.to_string(),

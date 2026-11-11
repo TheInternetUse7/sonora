@@ -1,3 +1,5 @@
+> **Note:** This is a personal fork. I made changes to add per-provider proxy settings, HTTP/HTTPS/SOCKS5/SOCKS5h support, and a Network section in Settings. They work for me on Windows. They have not been tested to the same standard as the main Sonora project. Official proxy support is tracked at https://github.com/sonorahq/sonora/issues/529.
+
 <div align="center">
 
 <img src="./.github/readme-icon.svg" alt="" width="60" height="60">
@@ -24,6 +26,7 @@
 ### A native, familiar music streaming client
 
 Stream from your favorite services and play local files — all in one **native** app.
+
 </div>
 
 <div align="center">
@@ -158,23 +161,23 @@ Discord is the primary one, but we do have a Matrix bridge.
 
 <!-- i18n:start -->
 
-| Language | Translated | Coverage |
-| --- | --- | --- |
-| English (`en-US`) | 1223/1223 | 100% |
-| Deutsch (`de`) | 1105/1223 | 90% |
-| Español (`es`) | 1105/1223 | 90% |
-| Français (`fr`) | 1106/1223 | 90% |
-| Italiano (`it`) | 1105/1223 | 90% |
-| Bahasa Indonesia (`id`) | 1105/1223 | 90% |
-| 日本語 (`ja`) | 1105/1223 | 90% |
-| Русский (`ru`) | 1153/1223 | 94% |
-| Українська (`uk`) | 1107/1223 | 91% |
-| Polski (`pl`) | 1107/1223 | 91% |
-| Čeština (`cs`) | 1105/1223 | 90% |
-| Português (Brasil) (`pt-BR`) | 1105/1223 | 90% |
-| 简体中文 (`zh-CN`) | 1105/1223 | 90% |
-| Türkçe (`tr`) | 1105/1223 | 90% |
-| Shqip (`sq`) | 1105/1223 | 90% |
+| Language                     | Translated | Coverage |
+| ---------------------------- | ---------- | -------- |
+| English (`en-US`)            | 1223/1223  | 100%     |
+| Deutsch (`de`)               | 1105/1223  | 90%      |
+| Español (`es`)               | 1105/1223  | 90%      |
+| Français (`fr`)              | 1106/1223  | 90%      |
+| Italiano (`it`)              | 1105/1223  | 90%      |
+| Bahasa Indonesia (`id`)      | 1105/1223  | 90%      |
+| 日本語 (`ja`)                | 1105/1223  | 90%      |
+| Русский (`ru`)               | 1153/1223  | 94%      |
+| Українська (`uk`)            | 1107/1223  | 91%      |
+| Polski (`pl`)                | 1107/1223  | 91%      |
+| Čeština (`cs`)               | 1105/1223  | 90%      |
+| Português (Brasil) (`pt-BR`) | 1105/1223  | 90%      |
+| 简体中文 (`zh-CN`)           | 1105/1223  | 90%      |
+| Türkçe (`tr`)                | 1105/1223  | 90%      |
+| Shqip (`sq`)                 | 1105/1223  | 90%      |
 
 <!-- i18n:end -->
 

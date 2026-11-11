@@ -22,7 +22,7 @@ pub struct LrcLib {
 impl LrcLib {
     pub fn new() -> Self {
         Self {
-            http: reqwest::Client::new(),
+            http: net::client(""),
         }
     }
 }

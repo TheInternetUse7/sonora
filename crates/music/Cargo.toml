@@ -11,6 +11,7 @@ bundled-sqlite = ["rusqlite/bundled", "storage/bundled-sqlite"]
 widevine = ["widevine/cdm"]
 
 [dependencies]
+net.workspace = true
 anyhow.workspace = true
 ardftsrc.workspace = true
 async-trait.workspace = true

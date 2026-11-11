@@ -42,6 +42,7 @@ const USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/201001
 
 const GTK_WINDOW_TOPLEVEL: c_int = 0;
 const GTK_WIN_POS_CENTER: c_int = 1;
+const WEBKIT_NETWORK_PROXY_MODE_CUSTOM: c_int = 2;
 const G_SOURCE_REMOVE: Bool = 0;
 const G_SOURCE_CONTINUE: Bool = 1;
 /// `WEBKIT_COOKIE_POLICY_ACCEPT_ALWAYS`. WebKitGTK alone defaults to `ACCEPT_NO_THIRD_PARTY`;
@@ -123,6 +124,9 @@ symbols! {
     g_list_free_full: unsafe extern "C" fn(*mut Node, Notify),
     g_error_free: unsafe extern "C" fn(*mut Fault),
     webkit_web_context_new_ephemeral: unsafe extern "C" fn() -> Ptr,
+    webkit_web_context_set_network_proxy_settings: unsafe extern "C" fn(Ptr, c_int, Ptr),
+    webkit_network_proxy_settings_new: unsafe extern "C" fn(*const c_char, *const *const c_char) -> Ptr,
+    webkit_network_proxy_settings_free: unsafe extern "C" fn(Ptr),
     webkit_web_context_get_cookie_manager: unsafe extern "C" fn(Ptr) -> Ptr,
     webkit_web_view_new_with_context: unsafe extern "C" fn(Ptr) -> Ptr,
     webkit_web_view_get_settings: unsafe extern "C" fn(Ptr) -> Ptr,
@@ -396,6 +400,21 @@ impl Live {
         let context = unsafe { (api.webkit_web_context_new_ephemeral)() };
         if context.is_null() {
             bail!("cannot open a throwaway web session");
+        }
+        let proxy = CString::new(format!("http://127.0.0.1:{}", session.target.proxy_port))?;
+        let settings =
+            unsafe { (api.webkit_network_proxy_settings_new)(proxy.as_ptr(), std::ptr::null()) };
+        if settings.is_null() {
+            unsafe { (api.g_object_unref)(context) };
+            bail!("cannot configure the browser proxy");
+        }
+        unsafe {
+            (api.webkit_web_context_set_network_proxy_settings)(
+                context,
+                WEBKIT_NETWORK_PROXY_MODE_CUSTOM,
+                settings,
+            );
+            (api.webkit_network_proxy_settings_free)(settings);
         }
         let view = unsafe { (api.webkit_web_view_new_with_context)(context) };
         let window = unsafe { (api.gtk_window_new)(GTK_WINDOW_TOPLEVEL) };

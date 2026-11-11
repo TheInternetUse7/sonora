@@ -325,7 +325,9 @@ async fn artwork(url: &str) -> Result<PathBuf> {
         }
     }
 
-    let bytes = reqwest::get(url)
+    let bytes = net::client(net::artwork_provider(url))
+        .get(url)
+        .send()
         .await
         .context("cannot request the cover")?
         .error_for_status()

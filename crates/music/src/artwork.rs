@@ -11,9 +11,17 @@ const RESULTS: &str = "10";
 /// Finds cover art by name in Deezer's public catalogue, which needs no account and serves every
 /// image from a public https url. It is for a track whose own art cannot be handed to someone
 /// else, so a miss is `None` rather than an error.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct ArtworkSearch {
     http: reqwest::Client,
+}
+
+impl Default for ArtworkSearch {
+    fn default() -> Self {
+        Self {
+            http: net::client(""),
+        }
+    }
 }
 
 /// What a lookup searches for. A track with an album is looked up by the album, so every track
@@ -97,7 +105,7 @@ impl ArtworkSearch {
                     .into_iter()
                     .filter(|album| same_artist(&album.artist.name, &query.artist))
                     .map(|album| (album.title, album.cover_xl));
-                Ok(closest(candidates, &query.album))
+                Ok(closest(candidates, &query.album).map(|url| net::own_artwork("", url)))
             }
             true => {
                 let found: Vec<FoundTrack> = self.search(TRACKS, &query.title, query).await?;
@@ -105,7 +113,7 @@ impl ArtworkSearch {
                     .into_iter()
                     .filter(|track| same_artist(&track.artist.name, &query.artist))
                     .map(|track| (track.title, track.album.cover_xl));
-                Ok(closest(candidates, &query.title))
+                Ok(closest(candidates, &query.title).map(|url| net::own_artwork("", url)))
             }
         }
     }

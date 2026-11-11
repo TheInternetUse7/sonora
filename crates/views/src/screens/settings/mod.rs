@@ -33,6 +33,7 @@ mod general;
 mod header;
 mod layout;
 mod lyrics;
+mod network;
 mod now_playing;
 mod playback;
 mod player_bar;
@@ -63,6 +64,7 @@ const STORAGE_POLL: Duration = Duration::from_secs(2);
 /// a search scores slots by their title and detail, and only visible groups build their rows.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Slot {
+    Network,
     Accounts,
     LocalFolder,
     Folders,
@@ -218,6 +220,7 @@ impl Group {
 }
 
 pub struct SettingsView {
+    network: network::Form,
     session: Entity<Session>,
     playback: Entity<Playback>,
     /// Measures the cache and the downloads again every so often while the storage section's
@@ -408,8 +411,17 @@ impl SettingsView {
         let popovers = Popovers::default();
         let output_picker = cx.new(|cx| OutputPicker::new(outputs.clone(), popovers.clone(), cx));
         let previews = preview::Previews::new(cx);
+        let network_settings = settings.read(cx).network().clone();
+        let network = network::Form::new(&network_settings, cx);
+        for input in [&network.address, &network.bypass] {
+            cx.observe(input, |_, _, cx| {
+                cx.notify();
+            })
+            .detach();
+        }
 
         Self {
+            network,
             session,
             _storage: storage,
             playback,
@@ -688,6 +700,7 @@ impl SettingsView {
     /// of searches.
     fn slot_meta(&self, slot: Slot, cx: &App) -> Option<(SharedString, SharedString)> {
         let meta = match slot {
+            Slot::Network => (t!("settings-network"), t!("settings-network-detail")),
             Slot::Folders => return None,
             Slot::Startup => (t!("settings-startup"), t!("settings-startup-detail")),
             Slot::Entries => (t!("settings-entries"), t!("settings-entries-detail")),
@@ -947,6 +960,7 @@ impl SettingsView {
     /// Builds the slot's row or cards when its group is visible or needs measuring.
     fn slot_element(&self, slot: Slot, window: &Window, cx: &mut Context<Self>) -> AnyElement {
         match slot {
+            Slot::Network => self.network_row(cx),
             Slot::Startup => self.startup_row(cx),
             Slot::Entries => self.entries_row(cx),
             Slot::Language => self.language_row(cx),

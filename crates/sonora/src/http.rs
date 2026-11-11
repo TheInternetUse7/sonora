@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::{self, FileTimes, OpenOptions};
 use std::future::Future;
 use std::io::Read as _;
@@ -24,7 +25,7 @@ static TEMP_FILE: AtomicU64 = AtomicU64::new(0);
 type Sent = Pin<Box<dyn Future<Output = Result<Response<AsyncBody>>> + Send>>;
 
 pub struct Client {
-    inner: reqwest::Client,
+    clients: Mutex<HashMap<&'static str, reqwest::Client>>,
     handle: Handle,
     user_agent: HeaderValue,
     cache: Option<Arc<Mutex<DiskCache>>>,
@@ -46,10 +47,7 @@ impl Client {
             handle.spawn_blocking(move || with_cache(&cache, |cache| cache.sweep()));
         }
         Self {
-            inner: reqwest::Client::builder()
-                .user_agent(USER_AGENT)
-                .build()
-                .unwrap_or_default(),
+            clients: Mutex::default(),
             handle: handle.clone(),
             user_agent: HeaderValue::from_static(USER_AGENT),
             cache,
@@ -67,7 +65,19 @@ impl HttpClient for Client {
     }
 
     fn send(&self, request: Request<AsyncBody>) -> Sent {
-        let client = self.inner.clone();
+        let scope = net::artwork_provider(&request.uri().to_string());
+        let client = self
+            .clients
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .entry(scope)
+            .or_insert_with(|| {
+                net::http(scope)
+                    .user_agent(USER_AGENT)
+                    .build()
+                    .expect("cannot build the artwork HTTP client")
+            })
+            .clone();
         let handle = self.handle.clone();
         let cache = self.cache.clone();
 

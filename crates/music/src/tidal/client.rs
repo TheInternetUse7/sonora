@@ -1763,7 +1763,7 @@ fn exhausted(answer: &Value, page: usize, size: usize) -> bool {
 /// that waits longer than `STALL` fails the request, so a dead connection surfaces as an error
 /// rather than a track that never starts.
 pub(crate) fn http() -> Result<reqwest::Client> {
-    reqwest::Client::builder()
+    net::http("tidal")
         .connect_timeout(CONNECT)
         .read_timeout(STALL)
         .build()

@@ -711,7 +711,7 @@ fn number(field: &Leaf) -> u32 {
 /// generated cover carries a signature, so only the placeholders are touched.
 pub fn artwork(attributes: &Attributes, size: u32) -> Option<String> {
     let template = attributes.artwork.url.as_str()?;
-    Some(sized(template, size, size))
+    Some(net::own_artwork("apple", sized(template, size, size)))
 }
 
 /// The first editorial picture of an artist that Apple sent, at no more than `BANNER` across
@@ -730,7 +730,10 @@ pub fn banner(attributes: &Attributes) -> Option<String> {
         let height = art.height.as_u64()?;
         let across = BANNER.min(width);
         let down = height * across / width;
-        Some(sized(template, across as u32, down as u32))
+        Some(net::own_artwork(
+            "apple",
+            sized(template, across as u32, down as u32),
+        ))
     })
 }
 

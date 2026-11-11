@@ -56,7 +56,12 @@ async fn run(
     mut outgoing: UnboundedReceiver<Request>,
     heard: UnboundedSender<Heard>,
 ) {
-    let socket = match tokio::time::timeout(CONNECT, tokio_tungstenite::connect_async(&url)).await {
+    let connect = async {
+        let destination = reqwest::Url::parse(&url)?;
+        let transport = net::connect("", &destination).await?;
+        Ok::<_, anyhow::Error>(tokio_tungstenite::client_async_tls(&url, transport).await?)
+    };
+    let socket = match tokio::time::timeout(CONNECT, connect).await {
         Ok(Ok((socket, _))) => socket,
         Ok(Err(error)) => {
             log::warn!("listening: cannot reach {url}: {error}");

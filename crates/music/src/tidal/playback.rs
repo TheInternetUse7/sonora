@@ -1151,7 +1151,7 @@ fn content_range(response: &reqwest::Response) -> Option<(u64, Option<u64>)> {
 
 /// The http client a track's bytes come through.
 fn media_http() -> Result<reqwest::Client> {
-    reqwest::Client::builder()
+    net::http("tidal")
         .connect_timeout(MEDIA_CONNECT)
         .read_timeout(MEDIA_STALL)
         .build()

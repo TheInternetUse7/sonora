@@ -90,9 +90,12 @@ impl SubsonicClient {
         signature: &Signature,
     ) -> Result<Self> {
         let server = server.trim_end_matches('/').to_owned();
+        net::register_artwork_origin("subsonic", &server);
+        let http = net::http("subsonic").build()?;
         let client = Client::new(&server, Auth::token(&username, password.clone()))
             .context("cannot parse the subsonic server address")?
-            .with_client_name(CLIENT_NAME);
+            .with_client_name(CLIENT_NAME)
+            .with_http_client(http.clone());
         let signed = format!(
             "u={}&t={}&s={}&v={API_VERSION}&c={CLIENT_NAME}&f=json",
             escape::component(&username),
@@ -106,7 +109,7 @@ impl SubsonicClient {
             password,
             signed,
             server,
-            http: reqwest::Client::new(),
+            http,
             covers,
             playback_report: Arc::default(),
         })
@@ -179,10 +182,9 @@ impl SubsonicClient {
     }
 
     fn cover_url(&self, id: &str, size: i32) -> Option<String> {
-        Some(format!(
-            "{}&id={}&size={size}",
-            self.covers,
-            escape::component(id)
+        Some(net::own_artwork(
+            "subsonic",
+            format!("{}&id={}&size={size}", self.covers, escape::component(id)),
         ))
     }
 
@@ -268,7 +270,7 @@ impl SubsonicClient {
         fallback: &str,
     ) -> Option<String> {
         if let Some(url) = image.filter(|url| !url.is_empty()) {
-            return Some(url.to_owned());
+            return Some(net::own_artwork("subsonic", url.to_owned()));
         }
         self.cover_large(art, fallback)
     }

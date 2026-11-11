@@ -12,6 +12,7 @@ bundled-sqlite = [
 ]
 
 [dependencies]
+net.workspace = true
 anyhow.workspace = true
 cli.workspace = true
 async-trait.workspace = true

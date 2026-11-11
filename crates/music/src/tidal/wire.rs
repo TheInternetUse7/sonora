@@ -107,11 +107,14 @@ pub fn unwrap(value: &Value) -> &Value {
 pub fn image(uuid: Option<&str>, size: u32) -> Option<String> {
     let uuid = uuid?;
     if uuid.starts_with("https://") {
-        return Some(uuid.to_owned());
+        return Some(net::own_artwork("tidal", uuid.to_owned()));
     }
-    Some(format!(
-        "https://resources.tidal.com/images/{}/{size}x{size}.jpg",
-        uuid.replace('-', "/")
+    Some(net::own_artwork(
+        "tidal",
+        format!(
+            "https://resources.tidal.com/images/{}/{size}x{size}.jpg",
+            uuid.replace('-', "/")
+        ),
     ))
 }
 

@@ -375,6 +375,7 @@ struct Held {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 struct Values {
+    network: net::Settings,
     normalisation: bool,
     gapless: bool,
     /// Whether played tracks are kept, sealed, so playing one again downloads nothing.
@@ -627,6 +628,7 @@ enum SettingsSave {
 impl Default for Values {
     fn default() -> Self {
         Self {
+            network: net::Settings::default(),
             normalisation: false,
             gapless: true,
             keep_tracks: true,
@@ -920,6 +922,21 @@ pub struct Reloaded;
 impl EventEmitter<Reloaded> for AppSettings {}
 
 impl AppSettings {
+    pub fn network(&self) -> &net::Settings {
+        &self.values.network
+    }
+
+    pub fn network_pending(&self) -> bool {
+        self.network() != net::active()
+    }
+
+    pub fn set_network(&mut self, network: net::Settings, cx: &mut Context<Self>) -> Result<()> {
+        network.validate()?;
+        self.values.network = network;
+        self.schedule_save(cx);
+        Ok(())
+    }
+
     /// Loads from the standard config and data paths.
     pub fn load(database: Database) -> Self {
         Self::load_from(settings_path(), StateStore::new(database))

@@ -224,7 +224,7 @@ fn path() -> PathBuf {
 async fn desktop_hash(operation: &str) -> Result<String> {
     // librespot overwrites User-Agent on every request, which makes this page serve
     // the mobile bundle. This unauthenticated client reads only public web assets.
-    let public = reqwest::Client::builder()
+    let public = net::http("spotify")
         .user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
         .timeout(Duration::from_secs(20)).build()?;
     let html = public_text(&public, "https://open.spotify.com").await?;

@@ -3,13 +3,15 @@
 //! completion on the main thread too, which is what lets `Fetch` sit in an `Rc`.
 
 use std::cell::RefCell;
+use std::ffi::CString;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
-use anyhow::{Context as _, Result};
+use anyhow::{Context as _, Result, ensure};
 use block2::RcBlock;
 use objc2::rc::Retained;
-use objc2::{MainThreadMarker, MainThreadOnly as _};
+use objc2::runtime::{AnyObject, NSObjectProtocol as _};
+use objc2::{MainThreadMarker, MainThreadOnly as _, msg_send, sel};
 use objc2_app_kit::{NSBackingStoreType, NSWindow, NSWindowStyleMask};
 use objc2_foundation::{
     NSArray, NSHTTPCookie, NSPoint, NSRect, NSSize, NSString, NSURL, NSURLRequest,
@@ -21,6 +23,9 @@ use objc2_web_kit::{
 
 use crate::native::{Fetch, HEIGHT, MIN_HEIGHT, MIN_WIDTH, Reading, WIDTH};
 use crate::{Cookie, Target};
+
+#[link(name = "Network", kind = "framework")]
+unsafe extern "C" {}
 
 /// Safari's own user agent. WebKit's default leaves out the `Version/… Safari/…` tail, and
 /// Google refuses to sign in a browser it reads as embedded.
@@ -56,6 +61,7 @@ impl Window {
         // The view copies the configuration, so the store is read back off the view afterwards.
         let configuration = unsafe { WKWebViewConfiguration::new(mtm) };
         let store = unsafe { WKWebsiteDataStore::nonPersistentDataStore(mtm) };
+        configure_proxy(&store, target.proxy_port)?;
         unsafe { configuration.setWebsiteDataStore(&store) };
         let view = unsafe {
             WKWebView::initWithFrame_configuration(WKWebView::alloc(mtm), frame, &configuration)
@@ -177,6 +183,46 @@ impl Window {
         }
         *self.dismissed.borrow_mut() = true;
     }
+}
+
+fn configure_proxy(store: &WKWebsiteDataStore, port: u16) -> Result<()> {
+    ensure!(
+        store.respondsToSelector(sel!(setProxyConfigurations:)),
+        "browser proxy configuration requires macOS 14 or later"
+    );
+    type CreateEndpoint =
+        unsafe extern "C" fn(*const std::ffi::c_char, *const std::ffi::c_char) -> *mut AnyObject;
+    type CreateProxy = unsafe extern "C" fn(*mut AnyObject, *mut AnyObject) -> *mut AnyObject;
+    let endpoint_symbol =
+        unsafe { libc::dlsym(libc::RTLD_DEFAULT, c"nw_endpoint_create_host".as_ptr()) };
+    let proxy_symbol = unsafe {
+        libc::dlsym(
+            libc::RTLD_DEFAULT,
+            c"nw_proxy_config_create_http_connect".as_ptr(),
+        )
+    };
+    ensure!(
+        !endpoint_symbol.is_null() && !proxy_symbol.is_null(),
+        "the Network framework does not support browser proxies"
+    );
+    let create_endpoint: CreateEndpoint = unsafe { std::mem::transmute(endpoint_symbol) };
+    let create_proxy: CreateProxy = unsafe { std::mem::transmute(proxy_symbol) };
+    let port = CString::new(port.to_string())?;
+    let endpoint =
+        unsafe { Retained::from_raw(create_endpoint(c"127.0.0.1".as_ptr(), port.as_ptr())) }
+            .context("cannot create the browser proxy endpoint")?;
+    let proxy = unsafe {
+        Retained::from_raw(create_proxy(
+            Retained::as_ptr(&endpoint).cast_mut(),
+            std::ptr::null_mut(),
+        ))
+    }
+    .context("cannot create the browser proxy configuration")?;
+    let configurations = NSArray::from_retained_slice(&[proxy]);
+    unsafe {
+        let _: () = msg_send![store, setProxyConfigurations: &*configurations];
+    }
+    Ok(())
 }
 
 impl Drop for Window {

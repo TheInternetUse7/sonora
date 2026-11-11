@@ -148,7 +148,7 @@ pub async fn fetch() -> Result<Found> {
 }
 
 fn client() -> Result<reqwest::Client> {
-    reqwest::Client::builder()
+    net::http("")
         .user_agent("Mozilla/5.0")
         .build()
         .context("cannot build an http client")

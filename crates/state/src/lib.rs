@@ -259,16 +259,16 @@ pub fn init(
     cx: &mut App,
     io: Io,
     database: storage::Database,
+    mut loaded_settings: AppSettings,
     providers: Vec<Arc<dyn MusicProvider>>,
     local_provider: Arc<dyn MusicProvider>,
     lyrics_providers: Vec<Arc<dyn LyricsProvider>>,
 ) {
     cx.set_global(io.clone());
     let settings = cx.new(|cx| {
-        let mut settings = AppSettings::load(database.clone());
-        settings.watch_files(cx);
-        settings.report_broken(cx);
-        settings
+        loaded_settings.watch_files(cx);
+        loaded_settings.report_broken(cx);
+        loaded_settings
     });
     // Spotify sets up its own file cache when its session opens, which can be before Playback
     // exists, so it hears the setting first.

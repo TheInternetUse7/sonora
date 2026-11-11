@@ -16,8 +16,6 @@ const PROBE: [Duration; 4] = [
 ];
 /// How long a check may take before it counts as a failure.
 const PATIENCE: Duration = Duration::from_secs(4);
-/// The port a check connects on, which is the one every provider is reached over.
-const PORT: u16 = 443;
 
 /// Raised when the network came back, so a screen that gave up can load again.
 pub struct Reconnected;
@@ -173,12 +171,12 @@ impl Network {
                 let Ok(host) = this.update(cx, |this, cx| this.session.read(cx).reach()) else {
                     return;
                 };
-                let Some(host) = host else {
+                let Some((provider, destination)) = host else {
                     continue;
                 };
                 let reached = io
                     .spawn(async move {
-                        let connect = tokio::net::TcpStream::connect((host.as_str(), PORT));
+                        let connect = net::connect(provider, &destination);
                         match tokio::time::timeout(PATIENCE, connect).await {
                             Ok(answer) => answer.is_ok(),
                             Err(_) => false,

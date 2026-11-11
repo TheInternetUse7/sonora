@@ -289,7 +289,7 @@ impl Search {
                 if linked == Linked::Short {
                     let address = query.clone();
                     let followed =
-                        join(io.spawn(async move { Ok(link::follow(&address).await) })).await;
+                        join(io.spawn(async move { Ok(link::follow(slug, &address).await) })).await;
                     let resolved = this
                         .update(cx, |this, cx| {
                             let followed = followed.ok().flatten()?;

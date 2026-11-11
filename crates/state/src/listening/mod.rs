@@ -151,7 +151,7 @@ impl Listening {
             code_shown: false,
             join_shown: false,
             settings,
-            http: reqwest::Client::new(),
+            http: net::client(""),
             saving: None,
             rejected: false,
         }

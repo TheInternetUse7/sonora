@@ -118,7 +118,17 @@ impl PoToken {
             music::potoken::failed();
             return;
         }
+        let proxy = match net::gateway("youtube") {
+            Ok(proxy) => proxy.expect("application networking is initialized"),
+            Err(error) => {
+                log::error!("potoken: cannot configure the provider proxy: {error:#}");
+                music::potoken::failed();
+                return;
+            }
+        };
         let target = webview::Target {
+            provider: "youtube".to_owned(),
+            proxy_port: proxy.port().expect("proxy adapter has a port"),
             url: format!("{PAGE}?binding={}", music::escape::component(&binding)),
             landing: LANDING.to_string(),
             domain: DOMAIN.to_string(),

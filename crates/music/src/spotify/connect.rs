@@ -1189,7 +1189,7 @@ async fn jam_token(link: &str) -> Option<String> {
         return token_in(link);
     }
     // a short link sometimes answers with a page that names the session instead of redirecting
-    let followed = crate::link::follow(link).await?;
+    let followed = crate::link::follow("spotify", link).await?;
     token_in(&followed.address).or_else(|| token_in(&followed.page))
 }
 

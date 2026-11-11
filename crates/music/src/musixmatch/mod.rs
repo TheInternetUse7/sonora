@@ -33,7 +33,7 @@ struct Gate {
 impl Musixmatch {
     pub fn new() -> Self {
         Self {
-            http: reqwest::Client::new(),
+            http: net::client(""),
             gate: Mutex::new(Gate::default()),
         }
     }

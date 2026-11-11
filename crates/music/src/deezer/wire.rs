@@ -98,8 +98,9 @@ pub fn image(kind: &str, md5: Option<&str>, size: u32) -> Option<String> {
     if !hashed(md5) {
         return None;
     }
-    Some(format!(
-        "https://cdn-images.dzcdn.net/images/{kind}/{md5}/{size}x{size}-000000-80-0-0.jpg"
+    Some(net::own_artwork(
+        "deezer",
+        format!("https://cdn-images.dzcdn.net/images/{kind}/{md5}/{size}x{size}-000000-80-0-0.jpg"),
     ))
 }
 
@@ -117,11 +118,14 @@ fn cover(value: &Value, size: u32) -> Option<String> {
     let md5 = text(value, &["md5_image", "ALB_PICTURE", "picture"]);
     image("cover", md5, size)
         .or_else(|| text(value, &["cover_big", "picture_big"]).map(str::to_owned))
+        .map(|url| net::own_artwork("deezer", url))
 }
 
 fn artist_picture(value: &Value, size: u32) -> Option<String> {
     let md5 = text(value, &["picture", "ART_PICTURE"]);
-    image("artist", md5, size).or_else(|| text(value, &["picture_big"]).map(str::to_owned))
+    image("artist", md5, size)
+        .or_else(|| text(value, &["picture_big"]).map(str::to_owned))
+        .map(|url| net::own_artwork("deezer", url))
 }
 
 fn artists_of(value: &Value) -> (String, Vec<ArtistRef>) {

@@ -20,6 +20,8 @@ impl SettingsView {
                 Slot::Entries,
                 Slot::Language,
             ]),
+            Group::new("settings-group-network", "icons/arrow-right-left.svg")
+                .rows([Slot::Network]),
             Group::new("settings-group-window", "icons/panel-left-open.svg")
                 .rows([Slot::Tray, Slot::TrayIcon])
                 .rows(self.decoration_slots(cx)),

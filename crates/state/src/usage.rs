@@ -102,7 +102,7 @@ impl Usage {
             logged_in: false,
             consented: true,
             store: Store::new(database),
-            http: reqwest::Client::new(),
+            http: net::client(""),
             io,
             load: None,
             task: None,

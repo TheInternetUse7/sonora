@@ -127,7 +127,7 @@ impl Updates {
         let mut updates = Self {
             state: UpdateState::Quiet,
             settings,
-            http: reqwest::Client::new(),
+            http: net::client(""),
             io,
             task: None,
             channel,
