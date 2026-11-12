@@ -5,9 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{Account, Link, Play, Secret, Service};
 
-/// The public instance. An account that names its own `server` is used instead, which is how a
-/// self-hosted ListenBrainz is reached without a second settings field.
-const API: &str = "https://api.listenbrainz.org";
+/// The public API base, used when the account's server URL is empty.
+const API: &str = "https://api.listenbrainz.org/1";
 const SETTINGS: &str = "https://listenbrainz.org/settings/";
 /// How many listens the endpoint takes in one call.
 const BATCH: usize = 50;
@@ -30,20 +29,23 @@ impl Service for ListenBrainz {
     }
 
     async fn connect(&self, secret: Secret) -> Result<Account> {
-        let Secret::Token(token) = secret else {
+        let Secret::Token { token, url } = secret else {
             bail!("listenbrainz needs a user token");
         };
         let token = token.trim().to_owned();
         if token.is_empty() {
             bail!("listenbrainz needs a user token");
         }
+        let server = super::normalize_server(&url)?;
 
         let answer: Validation = super::http()
-            .get(format!("{API}/1/validate-token"))
+            .get(format!("{}/validate-token", api(&server)))
             .header(AUTHORIZATION, format!("Token {token}"))
             .send()
             .await
             .context("cannot reach listenbrainz")?
+            .error_for_status()
+            .context("listenbrainz refused the token validation")?
             .json()
             .await
             .context("cannot read the listenbrainz answer")?;
@@ -55,6 +57,7 @@ impl Service for ListenBrainz {
 
         Ok(Account {
             session: token,
+            server,
             name: answer.user_name.unwrap_or_default(),
             enabled: true,
             ..Account::default()
@@ -74,17 +77,21 @@ impl Service for ListenBrainz {
     }
 }
 
-/// Where this account's instance lives. An empty `server` means the public one.
-fn api(account: &Account) -> &str {
-    match account.server.is_empty() {
-        true => API,
-        false => account.server.trim_end_matches('/'),
+/// Adds the API version to a normalized server base only when it is not already present.
+fn api(server: &str) -> String {
+    if server.is_empty() {
+        return API.to_owned();
+    }
+    match server.ends_with("/1") {
+        true => server.to_owned(),
+        false => format!("{server}/1"),
     }
 }
 
 async fn submit(account: &Account, kind: &str, payload: &[Listen<'_>]) -> Result<()> {
+    let server = super::normalize_server(&account.server)?;
     let answer = super::http()
-        .post(format!("{}/1/submit-listens", api(account)))
+        .post(format!("{}/submit-listens", api(&server)))
         .header(AUTHORIZATION, format!("Token {}", account.session))
         .json(&Submission {
             listen_type: kind,

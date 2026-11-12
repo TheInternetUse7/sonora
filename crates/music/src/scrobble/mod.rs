@@ -1,8 +1,9 @@
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use anyhow::Result;
+use anyhow::{Context as _, Result, ensure};
 use async_trait::async_trait;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 mod audioscrobbler;
@@ -67,7 +68,7 @@ pub enum Link {
     Browser,
     /// An API key and secret the user created, then the same browser approval. Last.fm.
     Keys,
-    /// A token copied from the service's settings page. ListenBrainz.
+    /// A user token and an optional custom server URL. ListenBrainz.
     Token,
     /// A server url and one of that server's API keys. Maloja.
     Server,
@@ -79,7 +80,7 @@ pub enum Link {
 pub enum Secret {
     None,
     Keys { key: String, secret: String },
-    Token(String),
+    Token { token: String, url: String },
     Server { url: String, key: String },
 }
 
@@ -145,6 +146,37 @@ pub trait Service: Send + Sync {
     /// The account is one `connect` returned, since a row only submits while its account is
     /// linked and switched on.
     async fn scrobble(&self, account: &Account, plays: &[Play]) -> Result<()>;
+}
+
+/// Validates an optional HTTP(S) server base and removes trailing slashes. An empty value keeps
+/// the service's public instance; paths are kept for servers behind a reverse proxy.
+pub fn normalize_server(raw: &str) -> Result<String> {
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return Ok(String::new());
+    }
+    let url = Url::parse(raw).context("invalid scrobbling server URL")?;
+    ensure!(
+        matches!(url.scheme(), "http" | "https"),
+        "scrobbling server URL must use HTTP or HTTPS"
+    );
+    ensure!(
+        url.host_str().is_some(),
+        "scrobbling server URL has no host"
+    );
+    ensure!(
+        url.port() != Some(0),
+        "scrobbling server port must be greater than zero"
+    );
+    ensure!(
+        url.username().is_empty() && url.password().is_none(),
+        "scrobbling server URL must not contain credentials"
+    );
+    ensure!(
+        url.query().is_none() && url.fragment().is_none(),
+        "scrobbling server URL must not contain a query or fragment"
+    );
+    Ok(url.as_str().trim_end_matches('/').to_owned())
 }
 
 /// The one http client every service shares, so they pool connections and reuse TLS sessions

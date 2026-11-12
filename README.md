@@ -1,4 +1,4 @@
-> **Note:** This is a personal fork. I made changes to add per-provider proxy settings, HTTP/HTTPS/SOCKS5/SOCKS5h support, and a Network section in Settings. They work for me on Windows. They have not been tested to the same standard as the main Sonora project. Official proxy support is tracked at https://github.com/sonorahq/sonora/issues/529.
+> **Note:** This is a personal fork. I made changes to add per-provider proxy settings, HTTP/HTTPS/SOCKS5/SOCKS5h support, a Network section in Settings, and custom ListenBrainz / compatible server URL support for scrobbling. They work for me on Windows. They have not been tested to the same standard as the main Sonora project. Official proxy support is tracked at https://github.com/sonorahq/sonora/issues/529 and custom ListenBrainz server support at https://github.com/sonorahq/sonora/issues/1320.
 
 <div align="center">
 
@@ -161,23 +161,23 @@ Discord is the primary one, but we do have a Matrix bridge.
 
 <!-- i18n:start -->
 
-| Language                     | Translated | Coverage |
-| ---------------------------- | ---------- | -------- |
-| English (`en-US`)            | 1223/1223  | 100%     |
-| Deutsch (`de`)               | 1105/1223  | 90%      |
-| Español (`es`)               | 1105/1223  | 90%      |
-| Français (`fr`)              | 1106/1223  | 90%      |
-| Italiano (`it`)              | 1105/1223  | 90%      |
-| Bahasa Indonesia (`id`)      | 1105/1223  | 90%      |
-| 日本語 (`ja`)                | 1105/1223  | 90%      |
-| Русский (`ru`)               | 1153/1223  | 94%      |
-| Українська (`uk`)            | 1107/1223  | 91%      |
-| Polski (`pl`)                | 1107/1223  | 91%      |
-| Čeština (`cs`)               | 1105/1223  | 90%      |
-| Português (Brasil) (`pt-BR`) | 1105/1223  | 90%      |
-| 简体中文 (`zh-CN`)           | 1105/1223  | 90%      |
-| Türkçe (`tr`)                | 1105/1223  | 90%      |
-| Shqip (`sq`)                 | 1105/1223  | 90%      |
+| Language | Translated | Coverage |
+| --- | --- | --- |
+| English (`en-US`) | 1256/1256 | 100% |
+| Deutsch (`de`) | 1106/1256 | 88% |
+| Español (`es`) | 1106/1256 | 88% |
+| Français (`fr`) | 1107/1256 | 88% |
+| Italiano (`it`) | 1106/1256 | 88% |
+| Bahasa Indonesia (`id`) | 1106/1256 | 88% |
+| 日本語 (`ja`) | 1106/1256 | 88% |
+| Русский (`ru`) | 1157/1256 | 92% |
+| Українська (`uk`) | 1108/1256 | 88% |
+| Polski (`pl`) | 1108/1256 | 88% |
+| Čeština (`cs`) | 1106/1256 | 88% |
+| Português (Brasil) (`pt-BR`) | 1106/1256 | 88% |
+| 简体中文 (`zh-CN`) | 1106/1256 | 88% |
+| Türkçe (`tr`) | 1106/1256 | 88% |
+| Shqip (`sq`) | 1106/1256 | 88% |
 
 <!-- i18n:end -->
 

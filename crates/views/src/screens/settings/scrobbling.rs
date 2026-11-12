@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, SharedString, div, px};
 use i18n::t;
-use music::scrobble::{Link, Secret};
+use music::scrobble::{self, Link, Secret};
 use state::ScrobbleState;
 use ui::{ActiveTheme as _, Button, Modal, Switch, Text};
 
@@ -132,6 +132,7 @@ impl SettingsView {
         link: Link,
         cx: &mut Context<Self>,
     ) {
+        self.scrobble_server_invalid = false;
         let account = self.settings.read(cx).account(service);
         let (first, second) = match link {
             Link::Browser => {
@@ -157,7 +158,11 @@ impl SettingsView {
                     value: account.session,
                     masked: true,
                 },
-                None,
+                Some(Field {
+                    hint: "settings-scrobble-server-optional",
+                    value: account.server,
+                    masked: false,
+                }),
             ),
             Link::Server => (
                 Field {
@@ -177,12 +182,14 @@ impl SettingsView {
             input.set_hint(first.hint, cx);
             input.set_masked(first.masked, cx);
             input.set_text(first.value, cx);
+            input.set_invalid(false, cx);
         });
         if let Some(second) = second {
             self.scrobble_second.update(cx, |input, cx| {
                 input.set_hint(second.hint, cx);
                 input.set_masked(second.masked, cx);
                 input.set_text(second.value, cx);
+                input.set_invalid(false, cx);
             });
         }
         self.scrobble_prompt = Some(service);
@@ -203,7 +210,19 @@ impl SettingsView {
                 key: first,
                 secret: second,
             },
-            Link::Token => Secret::Token(first),
+            Link::Token => {
+                let Ok(url) = scrobble::normalize_server(&second) else {
+                    self.scrobble_server_invalid = true;
+                    self.scrobble_second
+                        .update(cx, |input, cx| input.set_invalid(true, cx));
+                    cx.notify();
+                    return;
+                };
+                self.scrobble_server_invalid = false;
+                self.scrobble_second
+                    .update(cx, |input, cx| input.set_invalid(false, cx));
+                Secret::Token { token: first, url }
+            }
             Link::Server => Secret::Server {
                 url: first,
                 key: second,
@@ -220,6 +239,7 @@ impl SettingsView {
         service: &'static str,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
+        let theme = *cx.theme();
         let row = self
             .scrobbling
             .read(cx)
@@ -246,8 +266,28 @@ impl SettingsView {
                 .flex_col()
                 .gap_2()
                 .child(self.scrobble_first.clone())
-                .when(link != Link::Token, |this| {
+                .when(link != Link::Browser, |this| {
                     this.child(self.scrobble_second.clone())
+                })
+                .when(link == Link::Token, |this| {
+                    this.child(
+                        ui::spoken(
+                            "settings-scrobble-server-help",
+                            t!("settings-listenbrainz-server-detail"),
+                        )
+                        .text_size(theme.text(Text::Label))
+                        .text_color(theme.muted_foreground),
+                    )
+                    .when(self.scrobble_server_invalid, |this| {
+                        this.child(
+                            ui::spoken(
+                                "settings-scrobble-server-error",
+                                t!("settings-scrobble-server-invalid"),
+                            )
+                            .text_size(theme.text(Text::Label))
+                            .text_color(theme.danger),
+                        )
+                    })
                 }),
         )
         .when_some(signup, |this, url| {
@@ -275,6 +315,7 @@ impl SettingsView {
 
     pub(super) fn close_scrobble(&mut self, cx: &mut Context<Self>) {
         self.scrobble_prompt = None;
+        self.scrobble_server_invalid = false;
         cx.notify();
     }
 }

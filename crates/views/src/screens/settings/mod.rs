@@ -274,6 +274,8 @@ pub struct SettingsView {
     sessions_server: Entity<Input>,
     /// The service whose link dialog is open, by slug.
     scrobble_prompt: Option<&'static str>,
+    /// Whether the scrobbling dialog's optional server URL was rejected before linking.
+    scrobble_server_invalid: bool,
     /// The provider whose sign-in choice is up, by slug and name.
     sign_in_for: Option<(&'static str, &'static str)>,
     /// Holds the key focus while a dialog is up, so escape reaches the page and closes it,
@@ -463,6 +465,7 @@ impl SettingsView {
             connect_name,
             sessions_server,
             scrobble_prompt: None,
+            scrobble_server_invalid: false,
             languages,
             typefaces,
             typeface_faced: RefCell::new(HashSet::new()),
